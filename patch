@@ -1,0 +1,470 @@
+diff --git a/Gemfile b/Gemfile
+index 0b53610..94699ef 100644
+--- a/Gemfile
++++ b/Gemfile
+@@ -1,15 +1,16 @@
+ source 'https://rubygems.org'
+ 
++ruby "2.5.3"
++
+ git_source(:github) do |repo_name|
+   repo_name = "#{repo_name}/#{repo_name}" unless repo_name.include?("/")
+   "https://github.com/#{repo_name}.git"
+ end
+ 
+-
+ # Bundle edge Rails instead: gem 'rails', github: 'rails/rails'
+ gem 'rails', '~> 5.1.6', '>= 5.1.6.1'
+ # Use sqlite3 as the database for Active Record
+-gem 'sqlite3'
++gem 'sqlite3', '~> 1.3.13'
+ # Use Puma as the app server
+ gem 'puma', '~> 3.7'
+ # Use SCSS for stylesheets
+@@ -39,6 +40,7 @@ group :development, :test do
+   # Adds support for Capybara system testing and selenium driver
+   gem 'capybara', '~> 2.13'
+   gem 'selenium-webdriver'
++  gem 'faker'
+ end
+ 
+ group :development do
+@@ -49,6 +51,3 @@ group :development do
+   gem 'spring'
+   gem 'spring-watcher-listen', '~> 2.0.0'
+ end
+-
+-# Windows does not include zoneinfo files, so bundle the tzinfo-data gem
+-gem 'tzinfo-data', platforms: [:mingw, :mswin, :x64_mingw, :jruby]
+diff --git a/Gemfile.lock b/Gemfile.lock
+index b429fd8..01ecc85 100644
+--- a/Gemfile.lock
++++ b/Gemfile.lock
+@@ -64,6 +64,8 @@ GEM
+     crass (1.0.4)
+     erubi (1.8.0)
+     execjs (2.7.0)
++    faker (1.9.1)
++      i18n (>= 0.7)
+     ffi (1.10.0)
+     globalid (0.4.2)
+       activesupport (>= 4.2.0)
+@@ -149,7 +151,7 @@ GEM
+       actionpack (>= 4.0)
+       activesupport (>= 4.0)
+       sprockets (>= 3.0.0)
+-    sqlite3 (1.4.0)
++    sqlite3 (1.3.13)
+     thor (0.20.3)
+     thread_safe (0.3.6)
+     tilt (2.0.9)
+@@ -178,6 +180,7 @@ DEPENDENCIES
+   byebug
+   capybara (~> 2.13)
+   coffee-rails (~> 4.2)
++  faker
+   jbuilder (~> 2.5)
+   listen (>= 3.0.5, < 3.2)
+   puma (~> 3.7)
+@@ -186,11 +189,13 @@ DEPENDENCIES
+   selenium-webdriver
+   spring
+   spring-watcher-listen (~> 2.0.0)
+-  sqlite3
++  sqlite3 (~> 1.3.13)
+   turbolinks (~> 5)
+-  tzinfo-data
+   uglifier (>= 1.3.0)
+   web-console (>= 3.3.0)
+ 
++RUBY VERSION
++   ruby 2.5.3p105
++
+ BUNDLED WITH
+    1.17.1
+diff --git a/README.md b/README.md
+index 7db80e4..3a3f1ea 100644
+--- a/README.md
++++ b/README.md
+@@ -1,24 +1,3 @@
+-# README
++# Sharex Lite
+ 
+-This README would normally document whatever steps are necessary to get the
+-application up and running.
+-
+-Things you may want to cover:
+-
+-* Ruby version
+-
+-* System dependencies
+-
+-* Configuration
+-
+-* Database creation
+-
+-* Database initialization
+-
+-* How to run the test suite
+-
+-* Services (job queues, cache servers, search engines, etc.)
+-
+-* Deployment instructions
+-
+-* ...
++This is a pared down version of Sharex.
+diff --git a/app/assets/javascripts/cdn_check.js b/app/assets/javascripts/cdn_check.js
+new file mode 100644
+index 0000000..0806218
+--- /dev/null
++++ b/app/assets/javascripts/cdn_check.js
+@@ -0,0 +1,19 @@
++window.onload = function() {
++  if (typeof angular !== "undefined") {
++    console.log("AngularJS is loaded! :D");
++  } else {
++    console.log("AngularJS is not loaded! :(");
++  }
++
++  if (typeof React !== "undefined") {
++    console.log("React is loaded! :D");
++  } else {
++    console.log("React is not loaded! :(");
++  }
++
++  if (typeof jQuery !== "undefined") {
++    console.log("jQuery is loaded! :D");
++  } else {
++    console.log("jQuery is not loaded! :(");
++  }
++}
+diff --git a/app/controllers/application_controller.rb b/app/controllers/application_controller.rb
+index 1c07694..5aaae46 100644
+--- a/app/controllers/application_controller.rb
++++ b/app/controllers/application_controller.rb
+@@ -1,3 +1,5 @@
+ class ApplicationController < ActionController::Base
+   protect_from_forgery with: :exception
++
++  def index ; end
+ end
+diff --git a/app/models/account.rb b/app/models/account.rb
+new file mode 100644
+index 0000000..b8d0efb
+--- /dev/null
++++ b/app/models/account.rb
+@@ -0,0 +1,6 @@
++class Account < ApplicationRecord
++  has_many :direct_sales, class_name: "DirectTrade"
++  has_many :direct_purchases, class_name: "DirectTrade"
++  has_many :account_roles, dependent: :destroy
++  has_many :roles, through: :account_roles
++end
+diff --git a/app/models/account_role.rb b/app/models/account_role.rb
+new file mode 100644
+index 0000000..c24b07f
+--- /dev/null
++++ b/app/models/account_role.rb
+@@ -0,0 +1,4 @@
++class AccountRole < ApplicationRecord
++  belongs_to :account
++  belongs_to :role
++end
+diff --git a/app/models/direct_trade.rb b/app/models/direct_trade.rb
+new file mode 100644
+index 0000000..e7d06d3
+--- /dev/null
++++ b/app/models/direct_trade.rb
+@@ -0,0 +1,9 @@
++class DirectTrade < ApplicationRecord
++  CANCELED_STATUS = "canceled"
++  CLOSED_STATUS = "closed"
++  IN_PROGRESS_STATUS = "in_progress"
++
++  belongs_to :issuer
++  belongs_to :seller, class_name: "Account"
++  belongs_to :buyer, class_name: "Account"
++end
+diff --git a/app/models/issuer.rb b/app/models/issuer.rb
+new file mode 100644
+index 0000000..5a94eb1
+--- /dev/null
++++ b/app/models/issuer.rb
+@@ -0,0 +1,3 @@
++class Issuer < ApplicationRecord
++  has_many :direct_trades
++end
+diff --git a/app/models/role.rb b/app/models/role.rb
+new file mode 100644
+index 0000000..802b841
+--- /dev/null
++++ b/app/models/role.rb
+@@ -0,0 +1,4 @@
++class Role < ApplicationRecord
++  has_many :account_roles, dependent: :destroy
++  has_many :accounts, through: :account_roles
++end
+diff --git a/app/views/application/index.html.erb b/app/views/application/index.html.erb
+new file mode 100644
+index 0000000..e69de29
+diff --git a/app/views/layouts/application.html.erb b/app/views/layouts/application.html.erb
+index e3aee28..e2962a8 100644
+--- a/app/views/layouts/application.html.erb
++++ b/app/views/layouts/application.html.erb
+@@ -2,8 +2,11 @@
+ <html>
+   <head>
+     <title>SharexLite</title>
+-    <%= csrf_meta_tags %>
++    <%= javascript_include_tag 'https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js' %>
++    <%= javascript_include_tag 'https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.7.7/angular.min.js' %>
++    <%= javascript_include_tag 'https://cdnjs.cloudflare.com/ajax/libs/react/16.8.3/umd/react.production.min.js' %>
+ 
++    <%= csrf_meta_tags %>
+     <%= stylesheet_link_tag    'application', media: 'all', 'data-turbolinks-track': 'reload' %>
+     <%= javascript_include_tag 'application', 'data-turbolinks-track': 'reload' %>
+   </head>
+diff --git a/config/cable.yml b/config/cable.yml
+index 851dcca..3e9f6b7 100644
+--- a/config/cable.yml
++++ b/config/cable.yml
+@@ -7,4 +7,4 @@ test:
+ production:
+   adapter: redis
+   url: redis://localhost:6379/1
+-  channel_prefix: sharex-lite_production
++  channel_prefix: sharex_lite_production
+diff --git a/config/environments/production.rb b/config/environments/production.rb
+index 7462c5a..91b801d 100644
+--- a/config/environments/production.rb
++++ b/config/environments/production.rb
+@@ -59,7 +59,7 @@ Rails.application.configure do
+ 
+   # Use a real queuing backend for Active Job (and separate queues per environment)
+   # config.active_job.queue_adapter     = :resque
+-  # config.active_job.queue_name_prefix = "sharex-lite_#{Rails.env}"
++  # config.active_job.queue_name_prefix = "sharex_lite_#{Rails.env}"
+   config.action_mailer.perform_caching = false
+ 
+   # Ignore bad email addresses and do not raise email delivery errors.
+diff --git a/config/routes.rb b/config/routes.rb
+index 787824f..6dba992 100644
+--- a/config/routes.rb
++++ b/config/routes.rb
+@@ -1,3 +1,3 @@
+ Rails.application.routes.draw do
+-  # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
++  root "application#index"
+ end
+diff --git a/config/secrets.yml b/config/secrets.yml
+index 67b0ef6..9a2536b 100644
+--- a/config/secrets.yml
++++ b/config/secrets.yml
+@@ -18,10 +18,10 @@
+ # Environmental secrets are only available for that specific environment.
+ 
+ development:
+-  secret_key_base: 6f48fcc2fe9797350503bc4dcf5b9d054762c4305d5dbbcd9e33b82961d64d7303c7f1537ff2c78f6256db85398ef4b5b879d56734f5b86d5f47301487ad7d1a
++  secret_key_base: f4cf95fe9fec01e34aa9f04d3faf9f466d84319ae5ee9dca0b436fe7213342568fd0789437799fc98d8c669829ebd6210eceda6391d5aeeae1f5e1ef7d99349d
+ 
+ test:
+-  secret_key_base: c7bc03f6aba976d27bff6802a5db5eae0730b4b6602e9a95790c884f8b84b1967a7e6b167194d2281931a05c1038149a1ed1e1870f9f4ae753017b2e251db86f
++  secret_key_base: 76ada3d829af83bda46da7599951ae30b68ba7aece8dc7e2c1de6aff4254c41405459a18e09b831e1d1508c1f924556791d2829fe141003806b0993ef7886af9
+ 
+ # Do not keep production secrets in the unencrypted secrets file.
+ # Instead, either read values from the environment.
+diff --git a/db/migrate/20190304003338_create_models.rb b/db/migrate/20190304003338_create_models.rb
+new file mode 100644
+index 0000000..1fdd2a3
+--- /dev/null
++++ b/db/migrate/20190304003338_create_models.rb
+@@ -0,0 +1,44 @@
++class CreateModels < ActiveRecord::Migration[5.1]
++  def change
++    create_table :issuers do |t|
++      t.string :slug
++      t.string :name
++
++      t.timestamps
++    end
++
++    create_table :accounts do |t|
++      t.string :email, null: false
++      t.string :crypted_password
++      t.string :salt
++      t.string :first_name, null: false
++      t.string :last_name, null: false
++      t.references :broker, foreign_key: { to_table: :accounts }
++
++      t.timestamps
++    end
++
++    create_table :roles do |t|
++      t.string :name, null: false
++      t.string :key, null: false
++    end
++
++    create_table :account_roles do |t|
++      t.references :account
++      t.references :role
++    end
++
++    create_table :direct_trades do |t|
++      t.decimal :price_per_share
++      t.integer :number_of_shares
++      t.string :status
++      t.references :issuer
++      t.references :seller
++      t.references :buyer
++      t.references :seller_broker
++      t.references :buyer_broker
++
++      t.timestamps
++    end
++  end
++end
+diff --git a/db/schema.rb b/db/schema.rb
+new file mode 100644
+index 0000000..10aff10
+--- /dev/null
++++ b/db/schema.rb
+@@ -0,0 +1,64 @@
++# This file is auto-generated from the current state of the database. Instead
++# of editing this file, please use the migrations feature of Active Record to
++# incrementally modify your database, and then regenerate this schema definition.
++#
++# Note that this schema.rb definition is the authoritative source for your
++# database schema. If you need to create the application database on another
++# system, you should be using db:schema:load, not running all the migrations
++# from scratch. The latter is a flawed and unsustainable approach (the more migrations
++# you'll amass, the slower it'll run and the greater likelihood for issues).
++#
++# It's strongly recommended that you check this file into your version control system.
++
++ActiveRecord::Schema.define(version: 20190304003338) do
++
++  create_table "account_roles", force: :cascade do |t|
++    t.integer "account_id"
++    t.integer "role_id"
++    t.index ["account_id"], name: "index_account_roles_on_account_id"
++    t.index ["role_id"], name: "index_account_roles_on_role_id"
++  end
++
++  create_table "accounts", force: :cascade do |t|
++    t.string "email", null: false
++    t.string "crypted_password"
++    t.string "salt"
++    t.string "first_name", null: false
++    t.string "last_name", null: false
++    t.integer "broker_id"
++    t.datetime "created_at", null: false
++    t.datetime "updated_at", null: false
++    t.index ["broker_id"], name: "index_accounts_on_broker_id"
++  end
++
++  create_table "direct_trades", force: :cascade do |t|
++    t.decimal "price_per_share"
++    t.integer "number_of_shares"
++    t.string "status"
++    t.integer "issuer_id"
++    t.integer "seller_id"
++    t.integer "buyer_id"
++    t.integer "seller_broker_id"
++    t.integer "buyer_broker_id"
++    t.datetime "created_at", null: false
++    t.datetime "updated_at", null: false
++    t.index ["buyer_broker_id"], name: "index_direct_trades_on_buyer_broker_id"
++    t.index ["buyer_id"], name: "index_direct_trades_on_buyer_id"
++    t.index ["issuer_id"], name: "index_direct_trades_on_issuer_id"
++    t.index ["seller_broker_id"], name: "index_direct_trades_on_seller_broker_id"
++    t.index ["seller_id"], name: "index_direct_trades_on_seller_id"
++  end
++
++  create_table "issuers", force: :cascade do |t|
++    t.string "slug"
++    t.string "name"
++    t.datetime "created_at", null: false
++    t.datetime "updated_at", null: false
++  end
++
++  create_table "roles", force: :cascade do |t|
++    t.string "name", null: false
++    t.string "key", null: false
++  end
++
++end
+diff --git a/db/seeds.rb b/db/seeds.rb
+index 1beea2a..b70b3b8 100644
+--- a/db/seeds.rb
++++ b/db/seeds.rb
+@@ -1,7 +1,52 @@
+-# This file should contain all the record creation needed to seed the database with its default values.
+-# The data can then be loaded with the rails db:seed command (or created alongside the database with db:setup).
+-#
+-# Examples:
+-#
+-#   movies = Movie.create([{ name: 'Star Wars' }, { name: 'Lord of the Rings' }])
+-#   Character.create(name: 'Luke', movie: movies.first)
++puts "Destroying everything!"
++Role.destroy_all
++Account.destroy_all
++Issuer.destroy_all
++DirectTrade.destroy_all
++
++puts "Creating roles!"
++broker_role = Role.create!(name: "Broker", key: "broker")
++admin_role = Role.create!(name: "Admin", key: "admin")
++
++puts "Creating accounts!"
++admin = Account.create!(first_name: "Alex", last_name: "Admin", email: "aadmin@example.com", roles: [admin_role])
++sam = Account.create!(first_name: "Sam", last_name: "Buyer", email: "sbuyer@example.com")
++jaime = Account.create!(first_name: "Jaime", last_name: "Seller", email: "jseller@example.com")
++
++sams_broker = Account.create!(
++  first_name: "Sams",
++  last_name: "Broker",
++  email: "samsbroker@example.com",
++  roles: [broker_role]
++)
++
++jaimes_broker = Account.create!(
++  first_name: "Jaimes",
++  last_name: "Broker",
++  email: "jaimesbroker@example.com",
++  roles: [broker_role]
++)
++
++puts "Creating issuer!"
++unicorn = Issuer.create!(name: "Unicorn Inc", slug: "unicorn")
++
++puts "Creating direct trades!"
++DirectTrade.create!(
++  buyer: sam,
++  seller: jaime,
++  issuer: unicorn,
++  price_per_share: 12,
++  number_of_shares: 500,
++  status: DirectTrade::IN_PROGRESS_STATUS
++)
++
++DirectTrade.create!(
++  buyer: sam,
++  seller: jaime,
++  issuer: unicorn,
++  price_per_share: 15,
++  number_of_shares: 1000,
++  status: DirectTrade::CLOSED_STATUS
++)
++
++puts
+diff --git a/package.json b/package.json
+index 465af95..9473028 100644
+--- a/package.json
++++ b/package.json
+@@ -1,5 +1,5 @@
+ {
+-  "name": "sharex-lite",
++  "name": "sharex_lite",
+   "private": true,
+   "dependencies": {}
+ }

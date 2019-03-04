@@ -1,24 +1,22 @@
-# README
+# Sharex Lite
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+### Acceptance Criteria (for Interview)
 
-Things you may want to cover:
+As a broker, I should be able to navigate to "/deals" and see a list of all of my in progress deals.
 
-* Ruby version
+As an admin, I should be able to navigate to "/deals" and see a list of all in progress deals.
 
-* System dependencies
+The list of deals should include the following columns:
+  - Deal ID
+  - Issuer name
+  - Buyer/Seller broker last names
+  - This should be in the Format: "<Buyer Broker> - <Seller Broker>"
+  - Price per share
+  - Number of shares
+  - Total amount of trade
 
-* Configuration
+Notes:
+  - Dollar amounts should be human readable
+  - Ellipses should be used if text is too long for a column
 
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+Mock up [here](https://monosnap.com/image/qXL7urHhi7D8PQ9yaX8NTinGlIs5Hk.png).
