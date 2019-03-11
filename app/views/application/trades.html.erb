@@ -1,0 +1,11 @@
+<% @direct_trades_to_brokers.each do |direct_trade_obj, broker_tuple| %>
+  <%= "Deal ID: #{direct_trade_obj.id}\n" %>
+  <%= "Issuer Name: #{direct_trade_obj.issuer.name}\n" %>
+  <%= "Broker Last Names: #{broker_tuple.first.last_name}-#{broker_tuple.second.last_name}\n" %>
+  <%= "Quantity: #{direct_trade_obj.number_of_shares}\n" %>
+  <%= "Price: #{direct_trade_obj.price_per_share}\n" %>
+  <%= "Total: #{direct_trade_obj.number_of_shares * direct_trade_obj.price_per_share}\n" %>
+
+  <br/>
+  <br/>
+<% end %>
